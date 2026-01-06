@@ -7,6 +7,15 @@ on:
 
 jobs:
   trigger-vercel-deploy:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  trigger-vercel-deploy:
+    # Only run on merged PRs or direct pushes to main
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
 
     steps:
