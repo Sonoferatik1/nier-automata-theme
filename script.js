@@ -1,11 +1,10 @@
-// NieR: Automata Inspired Interactive Elements
+// Clean Developer Blog Interactive Elements
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize all interactive features
-    initGlitchEffect();
     initButtonEffects();
     initTerminalAnimation();
-    initRandomGlitches();
+    initSmoothHovers();
 });
 
 // Terminal typing animation
@@ -20,22 +19,18 @@ function initTerminalAnimation() {
     });
 }
 
-// Enhanced glitch effect on hover
-function initGlitchEffect() {
-    const glitchElements = document.querySelectorAll('.glitch');
+// Smooth hover interactions
+function initSmoothHovers() {
+    const cards = document.querySelectorAll('.data-card');
 
-    glitchElements.forEach(element => {
-        element.addEventListener('mouseenter', () => {
-            element.style.animation = 'none';
-            setTimeout(() => {
-                element.style.animation = 'glitch 0.3s infinite';
-            }, 10);
-        });
-
-        element.addEventListener('mouseleave', () => {
-            element.style.animation = 'glitch 2s infinite';
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         });
     });
+
+    // Add smooth scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
 }
 
 // Button interaction effects
@@ -118,119 +113,68 @@ function logToTerminal(action) {
     }
 }
 
-// Random glitch effects
-function initRandomGlitches() {
-    // Random glitch on data cards
-    const dataCards = document.querySelectorAll('.data-card');
-
-    setInterval(() => {
-        const randomCard = dataCards[Math.floor(Math.random() * dataCards.length)];
-        if (randomCard) {
-            randomCard.style.transform = 'translateX(2px)';
-            setTimeout(() => {
-                randomCard.style.transform = 'translateX(-2px)';
-            }, 50);
-            setTimeout(() => {
-                randomCard.style.transform = 'translateX(0)';
-            }, 100);
-        }
-    }, 5000);
-
-    // Random text glitch
-    const textElements = document.querySelectorAll('.panel-content p, .card-body p');
-
-    setInterval(() => {
-        const randomText = textElements[Math.floor(Math.random() * textElements.length)];
-        if (randomText) {
-            const originalText = randomText.textContent;
-            const glitchedText = glitchText(originalText);
-            randomText.textContent = glitchedText;
-
-            setTimeout(() => {
-                randomText.textContent = originalText;
-            }, 100);
-        }
-    }, 8000);
-}
-
-// Helper function to create glitched text
-function glitchText(text) {
-    const glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
-    const chars = text.split('');
-    const numGlitches = Math.floor(Math.random() * 3) + 1;
-
-    for (let i = 0; i < numGlitches; i++) {
-        const randomIndex = Math.floor(Math.random() * chars.length);
-        chars[randomIndex] = glitchChars[Math.floor(Math.random() * glitchChars.length)];
-    }
-
-    return chars.join('');
-}
-
-// Konami code easter egg
-let konamiCode = [];
-const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-
-document.addEventListener('keydown', (e) => {
-    konamiCode.push(e.key);
-    konamiCode = konamiCode.slice(-10);
-
-    if (konamiCode.join('') === konamiSequence.join('')) {
-        activateEasterEgg();
-    }
-});
-
-function activateEasterEgg() {
-    const terminalBody = document.querySelector('.terminal-body');
-    const easterEggLine = document.createElement('p');
-    easterEggLine.className = 'terminal-line';
-    easterEggLine.innerHTML = `<span class="prompt">></span> <span style="color: #d4c5a9; font-weight: bold;">GLORY TO MANKIND</span>`;
-    easterEggLine.style.opacity = '0';
-
-    terminalBody.appendChild(easterEggLine);
-
-    setTimeout(() => {
-        easterEggLine.style.opacity = '1';
-    }, 10);
-
-    // Flash effect
-    document.body.style.transition = 'background-color 0.1s';
-    document.body.style.backgroundColor = '#d4c5a9';
-    setTimeout(() => {
-        document.body.style.backgroundColor = '#0a0a0a';
-    }, 100);
-}
-
-// Cursor trail effect
+// Smooth cursor effect
 let mouseX = 0;
 let mouseY = 0;
 const cursor = document.createElement('div');
 cursor.style.cssText = `
     position: fixed;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(212, 197, 169, 0.5);
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
     border-radius: 50%;
     pointer-events: none;
     z-index: 10000;
-    transition: transform 0.1s ease;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+    opacity: 0.6;
+    mix-blend-mode: screen;
 `;
 document.body.appendChild(cursor);
+
+let cursorX = 0;
+let cursorY = 0;
 
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    cursor.style.left = `${mouseX - 10}px`;
-    cursor.style.top = `${mouseY - 10}px`;
 });
+
+// Smooth cursor follow animation
+function animateCursor() {
+    const dx = mouseX - cursorX;
+    const dy = mouseY - cursorY;
+
+    cursorX += dx * 0.15;
+    cursorY += dy * 0.15;
+
+    cursor.style.left = `${cursorX - 4}px`;
+    cursor.style.top = `${cursorY - 4}px`;
+
+    requestAnimationFrame(animateCursor);
+}
+
+animateCursor();
 
 // Pulse cursor on click
 document.addEventListener('mousedown', () => {
-    cursor.style.transform = 'scale(1.5)';
-    cursor.style.borderColor = 'rgba(212, 197, 169, 1)';
+    cursor.style.transform = 'scale(2)';
+    cursor.style.opacity = '1';
 });
 
 document.addEventListener('mouseup', () => {
     cursor.style.transform = 'scale(1)';
-    cursor.style.borderColor = 'rgba(212, 197, 169, 0.5)';
+    cursor.style.opacity = '0.6';
+});
+
+// Hide cursor when hovering over interactive elements
+const interactiveElements = document.querySelectorAll('button, a, .data-card');
+interactiveElements.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'scale(1.5)';
+        cursor.style.opacity = '0.8';
+    });
+    el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'scale(1)';
+        cursor.style.opacity = '0.6';
+    });
 });
