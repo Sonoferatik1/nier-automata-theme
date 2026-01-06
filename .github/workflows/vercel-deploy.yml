@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+
+jobs:
+  trigger-vercel-deploy:
   pull_request:
     types: [closed]
     branches:
