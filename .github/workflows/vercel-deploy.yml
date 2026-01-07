@@ -1,0 +1,37 @@
+name: Trigger Vercel Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  trigger-vercel-deploy:
+    # Only run on merged PRs or direct pushes to main
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Vercel Deploy Hook
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "⚠️ VERCEL_DEPLOY_HOOK secret is not set"
+            echo "Please add your Vercel Deploy Hook URL to repository secrets"
+            exit 1
+          fi
+
+          echo "🚀 Triggering Vercel deployment..."
+          response=$(curl -X POST "$VERCEL_DEPLOY_HOOK" -w "\n%{http_code}")
+          http_code=$(echo "$response" | tail -n1)
+
+          if [ "$http_code" -eq 200 ] || [ "$http_code" -eq 201 ]; then
+            echo "✅ Vercel deployment triggered successfully!"
+          else
+            echo "❌ Failed to trigger deployment. HTTP Status: $http_code"
+            exit 1
+          fi
