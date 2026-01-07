@@ -516,4 +516,149 @@ class SnakeGame {
 let snakeGame;
 document.addEventListener('DOMContentLoaded', () => {
     snakeGame = new SnakeGame();
+    initTodoList();
 });
+
+// Todo List Implementation
+class TodoList {
+    constructor() {
+        this.todos = JSON.parse(localStorage.getItem('nierTodos')) || [];
+        this.todoInput = document.getElementById('todoInput');
+        this.addBtn = document.getElementById('addTodoBtn');
+        this.todoList = document.getElementById('todoList');
+        this.activeCount = document.getElementById('activeCount');
+        this.completedCount = document.getElementById('completedCount');
+
+        this.init();
+    }
+
+    init() {
+        this.addBtn.addEventListener('click', () => this.addTodo());
+        this.todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addTodo();
+            }
+        });
+
+        this.render();
+    }
+
+    addTodo() {
+        const text = this.todoInput.value.trim();
+
+        if (!text) {
+            this.todoInput.style.borderColor = '#ff4444';
+            setTimeout(() => {
+                this.todoInput.style.borderColor = '';
+            }, 1000);
+            return;
+        }
+
+        const todo = {
+            id: Date.now(),
+            text: text,
+            completed: false,
+            createdAt: new Date().toISOString()
+        };
+
+        this.todos.unshift(todo);
+        this.save();
+        this.render();
+        this.todoInput.value = '';
+
+        logToTerminal(`Mission objective added: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
+    }
+
+    toggleTodo(id) {
+        const todo = this.todos.find(t => t.id === id);
+        if (todo) {
+            todo.completed = !todo.completed;
+            this.save();
+            this.render();
+
+            const status = todo.completed ? 'COMPLETED' : 'REACTIVATED';
+            logToTerminal(`Mission objective ${status}: ${todo.text.substring(0, 30)}${todo.text.length > 30 ? '...' : ''}`);
+        }
+    }
+
+    deleteTodo(id) {
+        const todo = this.todos.find(t => t.id === id);
+        const todoElement = document.querySelector(`[data-todo-id="${id}"]`);
+
+        if (todoElement) {
+            todoElement.classList.add('removing');
+            setTimeout(() => {
+                this.todos = this.todos.filter(t => t.id !== id);
+                this.save();
+                this.render();
+
+                if (todo) {
+                    logToTerminal(`Mission objective terminated: ${todo.text.substring(0, 30)}${todo.text.length > 30 ? '...' : ''}`);
+                }
+            }, 300);
+        }
+    }
+
+    save() {
+        localStorage.setItem('nierTodos', JSON.stringify(this.todos));
+    }
+
+    render() {
+        this.todoList.innerHTML = '';
+
+        if (this.todos.length === 0) {
+            this.todoList.innerHTML = `
+                <div class="todo-empty">
+                    No mission objectives assigned. Awaiting input...
+                </div>
+            `;
+        } else {
+            this.todos.forEach(todo => {
+                const li = this.createTodoElement(todo);
+                this.todoList.appendChild(li);
+            });
+        }
+
+        this.updateStats();
+    }
+
+    createTodoElement(todo) {
+        const li = document.createElement('li');
+        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        li.setAttribute('data-todo-id', todo.id);
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'todo-checkbox';
+        checkbox.checked = todo.completed;
+        checkbox.addEventListener('change', () => this.toggleTodo(todo.id));
+
+        const span = document.createElement('span');
+        span.className = 'todo-text';
+        span.textContent = todo.text;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'todo-delete';
+        deleteBtn.textContent = 'DELETE';
+        deleteBtn.addEventListener('click', () => this.deleteTodo(todo.id));
+
+        li.appendChild(checkbox);
+        li.appendChild(span);
+        li.appendChild(deleteBtn);
+
+        return li;
+    }
+
+    updateStats() {
+        const active = this.todos.filter(t => !t.completed).length;
+        const completed = this.todos.filter(t => t.completed).length;
+
+        this.activeCount.textContent = active;
+        this.completedCount.textContent = completed;
+    }
+}
+
+// Initialize Todo List
+function initTodoList() {
+    new TodoList();
+}
