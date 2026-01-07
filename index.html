@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Developer Blog - Clean & Modern</title>
+    <title>NieR: Automata Mission Protocol</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
 
     <header class="header">
         <div class="header-content">
-            <h1 class="glitch" data-text="Developer Insights">Developer Insights</h1>
+            <h1 class="glitch" data-text="Mission Protocol">Mission Protocol</h1>
             <div class="header-line"></div>
         </div>
     </header>
@@ -19,7 +19,7 @@
     <main class="main-content">
         <section class="terminal-window">
             <div class="terminal-header">
-                <span class="terminal-title">terminal</span>
+                <span class="terminal-title">// ACTIVITY LOG</span>
                 <div class="terminal-controls">
                     <span class="control"></span>
                     <span class="control"></span>
@@ -27,66 +27,67 @@
                 </div>
             </div>
             <div class="terminal-body">
-                <p class="terminal-line"><span class="prompt">$</span> npm run dev</p>
-                <p class="terminal-line"><span class="prompt">></span> Server running at <span class="status-ok">localhost:3000</span></p>
-                <p class="terminal-line"><span class="prompt">></span> Ready in 847ms</p>
-                <p class="terminal-line"><span class="prompt">></span> Compiled successfully</p>
+                <p class="terminal-line"><span class="prompt">></span> System initialized...</p>
+                <p class="terminal-line"><span class="prompt">></span> Mission Protocol: <span class="status-ok">ACTIVE</span></p>
+                <p class="terminal-line"><span class="prompt">></span> Awaiting task assignments...</p>
             </div>
         </section>
 
         <section class="info-panel">
             <div class="panel-header">
-                <h2>About This Space</h2>
+                <h2>// NEW MISSION</h2>
             </div>
-            <div class="panel-content">
-                <p>Welcome to a modern developer blog showcasing clean design, thoughtful typography, and a refined dark aesthetic. Built with attention to detail and crafted for the discerning developer.</p>
-                <p>Explore technical insights, code snippets, and curated thoughts on software engineering, architecture, and the craft of building elegant solutions.</p>
-            </div>
-        </section>
-
-        <section class="data-grid">
-            <div class="data-card">
-                <div class="card-header">Frontend Stack</div>
-                <div class="card-body">
-                    <p>Framework: React 18</p>
-                    <p>Build: 100%</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="data-card">
-                <div class="card-header">Backend Services</div>
-                <div class="card-body">
-                    <p>Runtime: Node.js</p>
-                    <p>Health: 87%</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 87%;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="data-card">
-                <div class="card-header">Deployment</div>
-                <div class="card-body">
-                    <p>Status: Production</p>
-                    <p>Uptime: 100%</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                </div>
+            <div class="panel-content todo-input-section">
+                <input type="text" id="todo-input" class="todo-input" placeholder="ENTER MISSION OBJECTIVE...">
+                <button id="add-todo-btn" class="nier-button">ASSIGN</button>
             </div>
         </section>
 
-        <section class="action-buttons">
-            <button class="nier-button">Read Articles</button>
-            <button class="nier-button secondary">View Projects</button>
-            <button class="nier-button tertiary">Contact</button>
+        <section class="todo-list-section">
+            <div class="panel-header">
+                <h2>// ACTIVE MISSIONS</h2>
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-filter="all">ALL</button>
+                    <button class="filter-btn" data-filter="active">ACTIVE</button>
+                    <button class="filter-btn" data-filter="completed">COMPLETED</button>
+                </div>
+            </div>
+            <div id="todo-list" class="todo-list">
+                <!-- Todo items will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="stats-grid">
+            <div class="data-card">
+                <div class="card-header">TOTAL_MISSIONS</div>
+                <div class="card-body">
+                    <p class="stat-number" id="stat-total">0</p>
+                    <p>Total Assigned</p>
+                </div>
+            </div>
+            <div class="data-card">
+                <div class="card-header">ACTIVE_STATUS</div>
+                <div class="card-body">
+                    <p class="stat-number" id="stat-active">0</p>
+                    <p>In Progress</p>
+                </div>
+            </div>
+            <div class="data-card">
+                <div class="card-header">COMPLETED</div>
+                <div class="card-body">
+                    <p class="stat-number" id="stat-completed">0</p>
+                    <p>Mission Complete</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="completion-bar"></div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
     <footer class="footer">
         <div class="footer-content">
-            <p>© 2024 Developer Insights • Crafted with precision • Built for developers</p>
+            <p>© YoRHa • Glory to Mankind • Bunker Connection: STABLE</p>
         </div>
     </footer>
 
