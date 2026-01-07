@@ -234,3 +234,286 @@ document.addEventListener('mouseup', () => {
     cursor.style.transform = 'scale(1)';
     cursor.style.borderColor = 'rgba(212, 197, 169, 0.5)';
 });
+
+// Snake Game Implementation
+class SnakeGame {
+    constructor() {
+        this.canvas = document.getElementById('snakeGame');
+        this.ctx = this.canvas.getContext('2d');
+        this.gridSize = 20;
+        this.tileCount = this.canvas.width / this.gridSize;
+
+        this.snake = [{ x: 10, y: 10 }];
+        this.velocity = { x: 0, y: 0 };
+        this.food = this.generateFood();
+        this.score = 0;
+        this.highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
+
+        this.gameRunning = false;
+        this.gamePaused = false;
+        this.gameLoop = null;
+        this.speed = 100;
+
+        this.init();
+    }
+
+    init() {
+        this.updateScoreDisplay();
+        this.setupControls();
+        this.setupKeyboardControls();
+        this.draw();
+    }
+
+    setupControls() {
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        startBtn.addEventListener('click', () => this.startGame());
+        pauseBtn.addEventListener('click', () => this.togglePause());
+        resetBtn.addEventListener('click', () => this.resetGame());
+    }
+
+    setupKeyboardControls() {
+        document.addEventListener('keydown', (e) => {
+            // Prevent default for arrow keys to avoid page scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+
+            // Space to start/pause
+            if (e.key === ' ' && this.gameRunning) {
+                this.togglePause();
+                return;
+            }
+
+            // WASD controls
+            if (e.key === 'w' || e.key === 'W') {
+                if (this.velocity.y !== 1) this.velocity = { x: 0, y: -1 };
+            }
+            if (e.key === 's' || e.key === 'S') {
+                if (this.velocity.y !== -1) this.velocity = { x: 0, y: 1 };
+            }
+            if (e.key === 'a' || e.key === 'A') {
+                if (this.velocity.x !== 1) this.velocity = { x: -1, y: 0 };
+            }
+            if (e.key === 'd' || e.key === 'D') {
+                if (this.velocity.x !== -1) this.velocity = { x: 1, y: 0 };
+            }
+
+            // Arrow key controls
+            if (e.key === 'ArrowUp') {
+                if (this.velocity.y !== 1) this.velocity = { x: 0, y: -1 };
+            }
+            if (e.key === 'ArrowDown') {
+                if (this.velocity.y !== -1) this.velocity = { x: 0, y: 1 };
+            }
+            if (e.key === 'ArrowLeft') {
+                if (this.velocity.x !== 1) this.velocity = { x: -1, y: 0 };
+            }
+            if (e.key === 'ArrowRight') {
+                if (this.velocity.x !== -1) this.velocity = { x: 1, y: 0 };
+            }
+        });
+    }
+
+    generateFood() {
+        let newFood;
+        do {
+            newFood = {
+                x: Math.floor(Math.random() * this.tileCount),
+                y: Math.floor(Math.random() * this.tileCount)
+            };
+        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+        return newFood;
+    }
+
+    startGame() {
+        if (this.gameRunning) return;
+
+        this.gameRunning = true;
+        this.gamePaused = false;
+        this.velocity = { x: 1, y: 0 }; // Start moving right
+        this.gameLoop = setInterval(() => this.update(), this.speed);
+        logToTerminal('Snake Protocol: INITIATED');
+    }
+
+    togglePause() {
+        if (!this.gameRunning) return;
+
+        this.gamePaused = !this.gamePaused;
+        if (this.gamePaused) {
+            clearInterval(this.gameLoop);
+            logToTerminal('Snake Protocol: PAUSED');
+        } else {
+            this.gameLoop = setInterval(() => this.update(), this.speed);
+            logToTerminal('Snake Protocol: RESUMED');
+        }
+    }
+
+    resetGame() {
+        clearInterval(this.gameLoop);
+        this.snake = [{ x: 10, y: 10 }];
+        this.velocity = { x: 0, y: 0 };
+        this.food = this.generateFood();
+        this.score = 0;
+        this.gameRunning = false;
+        this.gamePaused = false;
+        this.updateScoreDisplay();
+        this.draw();
+        logToTerminal('Snake Protocol: RESET');
+    }
+
+    gameOver() {
+        clearInterval(this.gameLoop);
+        this.gameRunning = false;
+
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('snakeHighScore', this.highScore);
+            logToTerminal(`NEW HIGH SCORE: ${this.highScore}`);
+        }
+
+        this.updateScoreDisplay();
+
+        // Flash the canvas
+        this.ctx.fillStyle = 'rgba(212, 197, 169, 0.3)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw game over text
+        this.ctx.fillStyle = '#d4c5a9';
+        this.ctx.font = 'bold 30px Orbitron';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('TERMINATED', this.canvas.width / 2, this.canvas.height / 2);
+
+        logToTerminal(`Snake Protocol: TERMINATED - Final Score: ${this.score}`);
+    }
+
+    update() {
+        if (this.gamePaused) return;
+
+        // Move snake
+        const head = {
+            x: this.snake[0].x + this.velocity.x,
+            y: this.snake[0].y + this.velocity.y
+        };
+
+        // Check wall collision
+        if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
+            this.gameOver();
+            return;
+        }
+
+        // Check self collision
+        if (this.snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            this.gameOver();
+            return;
+        }
+
+        this.snake.unshift(head);
+
+        // Check food collision
+        if (head.x === this.food.x && head.y === this.food.y) {
+            this.score += 10;
+            this.updateScoreDisplay();
+            this.food = this.generateFood();
+            logToTerminal(`Data packet collected. Score: ${this.score}`);
+        } else {
+            this.snake.pop();
+        }
+
+        this.draw();
+    }
+
+    draw() {
+        // Clear canvas
+        this.ctx.fillStyle = '#0a0a0a';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid lines
+        this.ctx.strokeStyle = 'rgba(212, 197, 169, 0.1)';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i <= this.tileCount; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i * this.gridSize, 0);
+            this.ctx.lineTo(i * this.gridSize, this.canvas.height);
+            this.ctx.stroke();
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i * this.gridSize);
+            this.ctx.lineTo(this.canvas.width, i * this.gridSize);
+            this.ctx.stroke();
+        }
+
+        // Draw food (data packet)
+        this.ctx.fillStyle = '#d4c5a9';
+        this.ctx.shadowBlur = 15;
+        this.ctx.shadowColor = '#d4c5a9';
+        this.ctx.beginPath();
+        this.ctx.arc(
+            this.food.x * this.gridSize + this.gridSize / 2,
+            this.food.y * this.gridSize + this.gridSize / 2,
+            this.gridSize / 2 - 2,
+            0,
+            Math.PI * 2
+        );
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // Draw snake
+        this.snake.forEach((segment, index) => {
+            const gradient = this.ctx.createLinearGradient(
+                segment.x * this.gridSize,
+                segment.y * this.gridSize,
+                segment.x * this.gridSize + this.gridSize,
+                segment.y * this.gridSize + this.gridSize
+            );
+
+            if (index === 0) {
+                // Head
+                gradient.addColorStop(0, '#d4c5a9');
+                gradient.addColorStop(1, '#a09890');
+            } else {
+                // Body
+                const alpha = 1 - (index / this.snake.length) * 0.5;
+                gradient.addColorStop(0, `rgba(212, 197, 169, ${alpha})`);
+                gradient.addColorStop(1, `rgba(160, 152, 144, ${alpha})`);
+            }
+
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(
+                segment.x * this.gridSize + 1,
+                segment.y * this.gridSize + 1,
+                this.gridSize - 2,
+                this.gridSize - 2
+            );
+        });
+
+        // Draw start message if game not running
+        if (!this.gameRunning && this.velocity.x === 0 && this.velocity.y === 0) {
+            this.ctx.fillStyle = 'rgba(212, 197, 169, 0.5)';
+            this.ctx.font = '20px Orbitron';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('Press START to begin', this.canvas.width / 2, this.canvas.height / 2);
+        }
+
+        // Draw pause message
+        if (this.gamePaused) {
+            this.ctx.fillStyle = 'rgba(212, 197, 169, 0.7)';
+            this.ctx.font = 'bold 30px Orbitron';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    }
+
+    updateScoreDisplay() {
+        document.getElementById('score').textContent = this.score;
+        document.getElementById('highScore').textContent = this.highScore;
+    }
+}
+
+// Initialize Snake Game when DOM is ready
+let snakeGame;
+document.addEventListener('DOMContentLoaded', () => {
+    snakeGame = new SnakeGame();
+});

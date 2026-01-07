@@ -313,6 +313,69 @@ body {
     50% { opacity: 0.7; }
 }
 
+/* Game Section */
+.game-section {
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 2rem;
+    position: relative;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.game-info {
+    display: flex;
+    gap: 3rem;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.score-display,
+.high-score-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: var(--accent-color);
+    letter-spacing: 0.1em;
+}
+
+.score-display span:last-child,
+.high-score-display span:last-child {
+    color: var(--success);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(139, 195, 74, 0.5);
+}
+
+#snakeGame {
+    border: 2px solid var(--accent-color);
+    background: var(--primary-bg);
+    box-shadow: 0 0 20px rgba(212, 197, 169, 0.2);
+    display: block;
+}
+
+.game-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.game-instructions {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+.game-instructions p {
+    margin: 0.5rem 0;
+}
+
 /* Action Buttons */
 .action-buttons {
     display: flex;
@@ -416,6 +479,20 @@ body {
 
     .nier-button {
         width: 100%;
+    }
+
+    #snakeGame {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .game-info {
+        gap: 1.5rem;
+    }
+
+    .score-display,
+    .high-score-display {
+        font-size: 1rem;
     }
 }
 

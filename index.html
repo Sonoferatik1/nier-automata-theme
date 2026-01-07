@@ -77,6 +77,32 @@
             </div>
         </section>
 
+        <section class="game-section">
+            <div class="panel-header">
+                <h2>// SNAKE PROTOCOL</h2>
+            </div>
+            <div class="game-container">
+                <div class="game-info">
+                    <div class="score-display">
+                        <span>SCORE: </span><span id="score">0</span>
+                    </div>
+                    <div class="high-score-display">
+                        <span>HIGH SCORE: </span><span id="highScore">0</span>
+                    </div>
+                </div>
+                <canvas id="snakeGame" width="400" height="400"></canvas>
+                <div class="game-controls">
+                    <button id="startBtn" class="nier-button">START</button>
+                    <button id="pauseBtn" class="nier-button secondary">PAUSE</button>
+                    <button id="resetBtn" class="nier-button tertiary">RESET</button>
+                </div>
+                <div class="game-instructions">
+                    <p>Use Arrow Keys or WASD to control the snake</p>
+                    <p class="status-ok">Collect data packets to grow • Avoid walls and yourself</p>
+                </div>
+            </div>
+        </section>
+
         <section class="action-buttons">
             <button class="nier-button">INITIATE</button>
             <button class="nier-button secondary">TERMINATE</button>
