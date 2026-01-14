@@ -1,6 +1,6 @@
-# NieR: Automata Inspired Theme
+# NieR: Automata Mission Protocol
 
-A beautiful, minimalist web theme inspired by the iconic aesthetic of NieR: Automata.
+A beautiful, minimalist todo list application inspired by the iconic aesthetic of NieR: Automata.
 
 ## Features
 
@@ -10,10 +10,16 @@ A beautiful, minimalist web theme inspired by the iconic aesthetic of NieR: Auto
   - Sci-fi typography using Orbitron and Share Tech Mono fonts
   - Clean, futuristic UI elements
 
+- **Todo List Functionality**
+  - Add, complete, and delete tasks (missions)
+  - Filter by All, Active, or Completed
+  - Persistent storage using localStorage
+  - Real-time statistics tracking
+  - Timestamps for each task
+
 - **Interactive Elements**
-  - Terminal window with live updates
+  - Terminal activity log with live updates
   - Animated glitch effects on hover
-  - Button ripple effects
   - Custom cursor trail
   - Random visual glitches for authenticity
   - Easter egg: Try the Konami code!
@@ -45,14 +51,34 @@ A beautiful, minimalist web theme inspired by the iconic aesthetic of NieR: Auto
 
 ## Usage
 
-Simply open `index.html` in a web browser to view the theme.
+Simply open `index.html` in a web browser to start managing your missions.
+
+### Adding Tasks
+1. Type your mission objective in the input field
+2. Click "ASSIGN" or press Enter
+3. Your task appears in the Active Missions list
+
+### Managing Tasks
+- Click the checkbox to mark a task as complete
+- Click the × button to delete a task
+- Use the filter buttons (ALL/ACTIVE/COMPLETED) to view different task states
+- Watch the terminal log for activity updates
+
+### Statistics
+- Total Missions: All tasks ever created
+- Active Status: Tasks currently in progress
+- Completed: Finished tasks with completion percentage
 
 ## Files
 
 - `index.html` - Main HTML structure
 - `style.css` - Complete styling and animations
-- `script.js` - Interactive JavaScript features
+- `script.js` - Interactive JavaScript features and todo logic
+
+## Data Persistence
+
+All tasks are automatically saved to your browser's localStorage, so your missions persist between sessions.
 
 ## Glory to Mankind
 
-This theme captures the essence of NieR: Automata's distinctive visual identity - minimalist, futuristic, and hauntingly beautiful.
+This application captures the essence of NieR: Automata's distinctive visual identity while providing a serious, functional todo list system - minimalist, futuristic, and hauntingly beautiful.
