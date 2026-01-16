@@ -103,6 +103,35 @@
             </div>
         </section>
 
+        <section class="go-game-section">
+            <div class="panel-header">
+                <h2>// GO PROTOCOL</h2>
+            </div>
+            <div class="go-game-container">
+                <div class="go-game-info">
+                    <div class="go-score-display">
+                        <span class="go-player-label">HUMAN (BLACK): </span><span id="blackScore">0</span> captures
+                    </div>
+                    <div class="go-score-display">
+                        <span class="go-player-label">AI (WHITE): </span><span id="whiteScore">0</span> captures
+                    </div>
+                    <div class="go-turn-display">
+                        <span>TURN: </span><span id="currentTurn">HUMAN</span>
+                    </div>
+                </div>
+                <canvas id="goGame" width="400" height="400"></canvas>
+                <div class="go-game-controls">
+                    <button id="goStartBtn" class="nier-button">START</button>
+                    <button id="goPassBtn" class="nier-button secondary">PASS</button>
+                    <button id="goResetBtn" class="nier-button tertiary">RESET</button>
+                </div>
+                <div class="go-game-instructions">
+                    <p>Click on intersections to place stones • Capture opponent groups by surrounding them</p>
+                    <p class="status-ok">Black plays first • Two consecutive passes end the game</p>
+                </div>
+            </div>
+        </section>
+
         <section class="todo-section">
             <div class="panel-header">
                 <h2>// MISSION LOG</h2>

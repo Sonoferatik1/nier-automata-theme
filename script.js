@@ -514,9 +514,11 @@ class SnakeGame {
 
 // Initialize Snake Game when DOM is ready
 let snakeGame;
+let goGame;
 document.addEventListener('DOMContentLoaded', () => {
     snakeGame = new SnakeGame();
     initTodoList();
+    goGame = new GoGame();
 });
 
 // Todo List Implementation
@@ -711,3 +713,581 @@ class TodoList {
 function initTodoList() {
     new TodoList();
 }
+class GoGame {
+    constructor() {
+        this.canvas = document.getElementById('goGame');
+        this.ctx = this.canvas.getContext('2d');
+        this.boardSize = 9; // 9x9 board for quicker games
+        this.cellSize = this.canvas.width / (this.boardSize + 1);
+
+        this.board = []; // 0 = empty, 1 = black (human), 2 = white (AI)
+        this.boardHistory = []; // For ko rule
+        this.captures = { black: 0, white: 0 };
+
+        this.currentPlayer = 1; // 1 = black (human), 2 = white (AI)
+        this.gameRunning = false;
+        this.passCount = 0;
+        this.consecutivePasses = 0;
+        this.aiThinking = false;
+
+        this.init();
+    }
+
+    init() {
+        this.setupControls();
+        this.setupCanvasClick();
+        this.drawBoard();
+    }
+
+    setupControls() {
+        const startBtn = document.getElementById('goStartBtn');
+        const passBtn = document.getElementById('goPassBtn');
+        const resetBtn = document.getElementById('goResetBtn');
+
+        startBtn.addEventListener('click', () => this.startGame());
+        passBtn.addEventListener('click', () => this.pass());
+        resetBtn.addEventListener('click', () => this.resetGame());
+    }
+
+    setupCanvasClick() {
+        this.canvas.addEventListener('click', (e) => {
+            if (!this.gameRunning || this.currentPlayer !== 1 || this.aiThinking) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Convert to grid coordinates
+            const col = Math.round(x / this.cellSize - 1);
+            const row = Math.round(y / this.cellSize - 1);
+
+            if (col >= 0 && col < this.boardSize && row >= 0 && row < this.boardSize) {
+                this.makeMove(row, col);
+            }
+        });
+    }
+
+    startGame() {
+        if (this.gameRunning) return;
+
+        this.resetBoard();
+        this.gameRunning = true;
+        this.consecutivePasses = 0;
+        this.currentPlayer = 1;
+        this.drawBoard();
+        this.updateDisplay();
+        logToTerminal('Go Protocol: INITIATED');
+    }
+
+    resetGame() {
+        this.resetBoard();
+        this.gameRunning = false;
+        this.consecutivePasses = 0;
+        this.captures = { black: 0, white: 0 };
+        this.drawBoard();
+        this.updateDisplay();
+        logToTerminal('Go Protocol: RESET');
+    }
+
+    resetBoard() {
+        this.board = Array(this.boardSize).fill(null).map(() => Array(this.boardSize).fill(0));
+        this.boardHistory = [];
+        this.currentPlayer = 1;
+        this.passCount = 0;
+    }
+
+    makeMove(row, col) {
+        // Check if cell is empty
+        if (this.board[row][col] !== 0) return false;
+
+        // Temporarily place the stone
+        const player = this.currentPlayer;
+        const opponent = player === 1 ? 2 : 1;
+        this.board[row][col] = player;
+
+        // Check for captures
+        const captured = this.checkCaptures(row, col, opponent);
+        const capturedCount = captured.length;
+
+        // Check if the move is suicidal (no liberties after captures)
+        const liberties = this.getLiberties(row, col);
+        if (liberties === 0 && capturedCount === 0) {
+            // Suicide move, revert
+            this.board[row][col] = 0;
+            return false;
+        }
+
+        // Check for ko rule
+        const boardState = JSON.stringify(this.board);
+        if (this.boardHistory.includes(boardState)) {
+            // Ko violation, revert
+            this.board[row][col] = 0;
+            // Restore captured stones
+            captured.forEach(([r, c]) => {
+                this.board[r][c] = opponent;
+            });
+            return false;
+        }
+
+        // Valid move
+        this.consecutivePasses = 0;
+        this.boardHistory.push(boardState);
+        if (this.boardHistory.length > 3) {
+            this.boardHistory.shift();
+        }
+
+        // Update captures
+        if (capturedCount > 0) {
+            if (player === 1) {
+                this.captures.black += capturedCount;
+            } else {
+                this.captures.white += capturedCount;
+            }
+            logToTerminal(`${player === 1 ? 'Human' : 'AI'} captured ${capturedCount} stone${capturedCount > 1 ? 's' : ''}`);
+        }
+
+        // Switch player
+        this.currentPlayer = opponent;
+        this.drawBoard();
+        this.updateDisplay();
+
+        // AI's turn
+        if (this.currentPlayer === 2 && this.gameRunning) {
+            this.aiThinking = true;
+            setTimeout(() => this.aiMove(), 500);
+        }
+
+        return true;
+    }
+
+    checkCaptures(row, col, opponent) {
+        const captured = [];
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+        for (const [dr, dc] of directions) {
+            const nr = row + dr;
+            const nc = col + dc;
+
+            if (nr >= 0 && nr < this.boardSize && nc >= 0 && nc < this.boardSize) {
+                if (this.board[nr][nc] === opponent) {
+                    const group = this.getGroup(nr, nc);
+                    const liberties = this.getGroupLiberties(group);
+
+                    if (liberties === 0) {
+                        // Capture this group
+                        group.forEach(([r, c]) => {
+                            this.board[r][c] = 0;
+                            captured.push([r, c]);
+                        });
+                    }
+                }
+            }
+        }
+
+        return captured;
+    }
+
+    getGroup(row, col) {
+        const color = this.board[row][col];
+        if (color === 0) return [];
+
+        const group = [];
+        const visited = new Set();
+        const stack = [[row, col]];
+
+        while (stack.length > 0) {
+            const [r, c] = stack.pop();
+            const key = `${r},${c}`;
+
+            if (visited.has(key)) continue;
+            if (r < 0 || r >= this.boardSize || c < 0 || c >= this.boardSize) continue;
+            if (this.board[r][c] !== color) continue;
+
+            visited.add(key);
+            group.push([r, c]);
+
+            stack.push([r - 1, c]);
+            stack.push([r + 1, c]);
+            stack.push([r, c - 1]);
+            stack.push([r, c + 1]);
+        }
+
+        return group;
+    }
+
+    getGroupLiberties(group) {
+        const liberties = new Set();
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+        for (const [row, col] of group) {
+            for (const [dr, dc] of directions) {
+                const nr = row + dr;
+                const nc = col + dc;
+
+                if (nr >= 0 && nr < this.boardSize && nc >= 0 && nc < this.boardSize) {
+                    if (this.board[nr][nc] === 0) {
+                        liberties.add(`${nr},${nc}`);
+                    }
+                }
+            }
+        }
+
+        return liberties.size;
+    }
+
+    getLiberties(row, col) {
+        const group = this.getGroup(row, col);
+        return this.getGroupLiberties(group);
+    }
+
+    pass() {
+        if (!this.gameRunning) return;
+
+        this.consecutivePasses++;
+        logToTerminal(`${this.currentPlayer === 1 ? 'Human' : 'AI'} passed`);
+
+        if (this.consecutivePasses >= 2) {
+            this.endGame();
+            return;
+        }
+
+        this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+        this.updateDisplay();
+
+        if (this.currentPlayer === 2 && this.gameRunning) {
+            this.aiThinking = true;
+            setTimeout(() => this.aiMove(), 500);
+        }
+    }
+
+    aiMove() {
+        if (!this.gameRunning) return;
+
+        const move = this.getBestMove();
+
+        if (move) {
+            const { row, col } = move;
+            this.makeMove(row, col);
+        } else {
+            // No valid moves, pass
+            this.pass();
+        }
+
+        this.aiThinking = false;
+    }
+
+    getBestMove() {
+        // Simple deterministic AI with basic strategy
+        const validMoves = [];
+
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col] === 0) {
+                    if (this.isValidMove(row, col, 2)) {
+                        const score = this.evaluateMove(row, col, 2);
+                        validMoves.push({ row, col, score });
+                    }
+                }
+            }
+        }
+
+        if (validMoves.length === 0) return null;
+
+        // Sort by score and pick the best
+        validMoves.sort((a, b) => b.score - a.score);
+
+        // Add some randomness among top moves to make it less predictable
+        const topMoves = validMoves.filter(m => m.score >= validMoves[0].score - 2);
+        return topMoves[Math.floor(Math.random() * topMoves.length)];
+    }
+
+    isValidMove(row, col, player) {
+        const opponent = player === 1 ? 2 : 1;
+
+        // Temporarily place stone
+        this.board[row][col] = player;
+
+        // Check for captures
+        const captured = this.checkCaptures(row, col, opponent);
+
+        // Check liberties
+        const liberties = this.getLiberties(row, col);
+        const isValid = liberties > 0 || captured.length > 0;
+
+        // Check ko rule
+        let notKo = true;
+        if (isValid) {
+            const boardState = JSON.stringify(this.board);
+            notKo = !this.boardHistory.includes(boardState);
+        }
+
+        // Revert
+        this.board[row][col] = 0;
+        captured.forEach(([r, c]) => {
+            this.board[r][c] = opponent;
+        });
+
+        return isValid && notKo;
+    }
+
+    evaluateMove(row, col, player) {
+        const opponent = player === 1 ? 2 : 1;
+        let score = 0;
+
+        // Temporarily place stone
+        this.board[row][col] = player;
+
+        // Factor 1: Capture potential
+        const captured = this.checkCaptures(row, col, opponent);
+        score += captured.length * 10;
+
+        // Factor 2: Self-defense (avoid being captured)
+        const liberties = this.getLiberties(row, col);
+        score += liberties * 2;
+
+        // Factor 3: Center control
+        const centerDist = Math.abs(row - this.boardSize / 2) + Math.abs(col - this.boardSize / 2);
+        score += (this.boardSize - centerDist);
+
+        // Factor 4: Protect weak groups
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        for (const [dr, dc] of directions) {
+            const nr = row + dr;
+            const nc = col + dc;
+            if (nr >= 0 && nr < this.boardSize && nc >= 0 && nc < this.boardSize) {
+                if (this.board[nr][nc] === player) {
+                    const neighborLiberties = this.getLiberties(nr, nc);
+                    if (neighborLiberties <= 2) {
+                        score += 3; // Protect weak stones
+                    }
+                }
+            }
+        }
+
+        // Factor 5: Atari (try to put opponent in atari)
+        for (const [dr, dc] of directions) {
+            const nr = row + dr;
+            const nc = col + dc;
+            if (nr >= 0 && nr < this.boardSize && nc >= 0 && nc < this.boardSize) {
+                if (this.board[nr][nc] === opponent) {
+                    const neighborLiberties = this.getLiberties(nr, nc);
+                    if (neighborLiberties === 1) {
+                        score += 5; // Put opponent in atari
+                    }
+                }
+            }
+        }
+
+        // Revert
+        this.board[row][col] = 0;
+        captured.forEach(([r, c]) => {
+            this.board[r][c] = opponent;
+        });
+
+        return score;
+    }
+
+    endGame() {
+        this.gameRunning = false;
+        this.aiThinking = false;
+
+        const blackTerritory = this.countTerritory(1);
+        const whiteTerritory = this.countTerritory(2);
+        const blackTotal = blackTerritory + this.captures.black;
+        const whiteTotal = whiteTerritory + this.captures.white;
+
+        let winner;
+        if (blackTotal > whiteTotal) {
+            winner = 'HUMAN';
+        } else if (whiteTotal > blackTotal) {
+            winner = 'AI';
+        } else {
+            winner = 'DRAW';
+        }
+
+        logToTerminal(`Go Protocol: TERMINATED - Winner: ${winner}`);
+        logToTerminal(`Black: ${blackTotal} (Territory: ${blackTerritory} + Captures: ${this.captures.black})`);
+        logToTerminal(`White: ${whiteTotal} (Territory: ${whiteTerritory} + Captures: ${this.captures.white})`);
+
+        this.drawBoard();
+
+        // Draw game over text
+        this.ctx.fillStyle = 'rgba(212, 197, 169, 0.8)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#0a0a0a';
+        this.ctx.font = 'bold 30px Orbitron';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`WINNER: ${winner}`, this.canvas.width / 2, this.canvas.height / 2 - 20);
+        this.ctx.font = '18px Orbitron';
+        this.ctx.fillText(`Black: ${blackTotal} | White: ${whiteTotal}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
+    }
+
+    countTerritory(player) {
+        let territory = 0;
+        const counted = new Set();
+
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col] === 0 && !counted.has(`${row},${col}`)) {
+                    const region = this.getEmptyRegion(row, col);
+                    const controlledBy = this.checkTerritoryControl(region);
+
+                    if (controlledBy === player) {
+                        territory += region.length;
+                    }
+
+                    region.forEach(([r, c]) => counted.add(`${r},${c}`));
+                }
+            }
+        }
+
+        return territory;
+    }
+
+    getEmptyRegion(startRow, startCol) {
+        const region = [];
+        const visited = new Set();
+        const stack = [[startRow, startCol]];
+
+        while (stack.length > 0) {
+            const [row, col] = stack.pop();
+            const key = `${row},${col}`;
+
+            if (visited.has(key)) continue;
+            if (row < 0 || row >= this.boardSize || col < 0 || col >= this.boardSize) continue;
+            if (this.board[row][col] !== 0) continue;
+
+            visited.add(key);
+            region.push([row, col]);
+
+            stack.push([row - 1, col]);
+            stack.push([row + 1, col]);
+            stack.push([row, col - 1]);
+            stack.push([row, col + 1]);
+        }
+
+        return region;
+    }
+
+    checkTerritoryControl(region) {
+        let touchesBlack = false;
+        let touchesWhite = false;
+
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+        for (const [row, col] of region) {
+            for (const [dr, dc] of directions) {
+                const nr = row + dr;
+                const nc = col + dc;
+
+                if (nr >= 0 && nr < this.boardSize && nc >= 0 && nc < this.boardSize) {
+                    if (this.board[nr][nc] === 1) touchesBlack = true;
+                    if (this.board[nr][nc] === 2) touchesWhite = true;
+                }
+            }
+        }
+
+        if (touchesBlack && !touchesWhite) return 1;
+        if (touchesWhite && !touchesBlack) return 2;
+        return 0; // Neutral or contested
+    }
+
+    drawBoard() {
+        // Clear canvas
+        this.ctx.fillStyle = '#d4c5a9';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid
+        this.ctx.strokeStyle = '#3a3a3a';
+        this.ctx.lineWidth = 1;
+
+        for (let i = 0; i < this.boardSize; i++) {
+            const pos = (i + 1) * this.cellSize;
+
+            // Horizontal lines
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.cellSize, pos);
+            this.ctx.lineTo(this.canvas.width - this.cellSize, pos);
+            this.ctx.stroke();
+
+            // Vertical lines
+            this.ctx.beginPath();
+            this.ctx.moveTo(pos, this.cellSize);
+            this.ctx.lineTo(pos, this.canvas.height - this.cellSize);
+            this.ctx.stroke();
+        }
+
+        // Draw star points (hoshi) for 9x9 board
+        const starPoints = [[2, 2], [2, 6], [4, 4], [6, 2], [6, 6]];
+        this.ctx.fillStyle = '#3a3a3a';
+        starPoints.forEach(([row, col]) => {
+            const x = (col + 1) * this.cellSize;
+            const y = (row + 1) * this.cellSize;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // Draw stones
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col] !== 0) {
+                    this.drawStone(row, col, this.board[row][col]);
+                }
+            }
+        }
+
+        // Draw start message if game not running
+        if (!this.gameRunning && this.board.flat().every(cell => cell === 0)) {
+            this.ctx.fillStyle = 'rgba(10, 10, 10, 0.5)';
+            this.ctx.font = '20px Orbitron';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('Press START to begin', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    }
+
+    drawStone(row, col, color) {
+        const x = (col + 1) * this.cellSize;
+        const y = (row + 1) * this.cellSize;
+        const radius = this.cellSize * 0.4;
+
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+        if (color === 1) {
+            // Black stone with gradient
+            const gradient = this.ctx.createRadialGradient(x - radius / 3, y - radius / 3, 0, x, y, radius);
+            gradient.addColorStop(0, '#2a2a2a');
+            gradient.addColorStop(1, '#0a0a0a');
+            this.ctx.fillStyle = gradient;
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowOffsetX = 2;
+            this.ctx.shadowOffsetY = 2;
+        } else {
+            // White stone with gradient
+            const gradient = this.ctx.createRadialGradient(x - radius / 3, y - radius / 3, 0, x, y, radius);
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, '#c0c0c0');
+            this.ctx.fillStyle = gradient;
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 5;
+            this.ctx.shadowOffsetX = 2;
+            this.ctx.shadowOffsetY = 2;
+        }
+
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
+    }
+
+    updateDisplay() {
+        document.getElementById('blackScore').textContent = this.captures.black;
+        document.getElementById('whiteScore').textContent = this.captures.white;
+        document.getElementById('currentTurn').textContent = this.currentPlayer === 1 ? 'HUMAN' : 'AI (THINKING...)';
+    }
+}
+
+// Go Game initialized in the main DOMContentLoaded listener above
+

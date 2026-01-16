@@ -376,6 +376,194 @@ body {
     margin: 0.5rem 0;
 }
 
+/* Go Game Section */
+.go-game-section {
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 2rem;
+    position: relative;
+}
+
+.go-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.go-game-info {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 1rem;
+    background: var(--primary-bg);
+    border: 1px solid var(--border-color);
+}
+
+.go-score-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.go-player-label {
+    color: var(--accent-color);
+}
+
+.go-score-display span:last-child {
+    color: var(--highlight);
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.go-turn-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.go-turn-display span:last-child {
+    color: var(--success);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(139, 195, 74, 0.5);
+}
+
+#goGame {
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 20px rgba(212, 197, 169, 0.2);
+    display: block;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+}
+
+#goGame:hover {
+    box-shadow: 0 0 30px rgba(212, 197, 169, 0.4);
+}
+
+.go-game-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.go-game-instructions {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+.go-game-instructions p {
+    margin: 0.5rem 0;
+}
+
+/* Todo Section */
+.todo-section {
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 2rem;
+    position: relative;
+}
+
+.todo-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.todo-input-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.todo-input {
+    flex: 1;
+    font-family: 'Share Tech Mono', monospace;
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.todo-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.todo-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(212, 197, 169, 0.2);
+}
+
+.todo-input-group .nier-button {
+    padding: 1rem 2rem;
+    white-space: nowrap;
+}
+
+.todo-stats {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--primary-bg);
+    border: 1px solid var(--border-color);
+}
+
+.todo-stat {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+}
+
+.todo-stat span:last-child {
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-left: 0.5rem;
+}
+
+.todo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Custom scrollbar for todo list */
+.todo-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.todo-list::-webkit-scrollbar-track {
+    background: var(--primary-bg);
+    border: 1px solid var(--border-color);
+}
+
+.todo-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border: 1px solid var(--accent-color);
+}
+
+
 /* Todo Section */
 .todo-section {
     background: var(--secondary-bg);
