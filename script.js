@@ -528,6 +528,10 @@ class TodoList {
         this.todoList = document.getElementById('todoList');
         this.activeCount = document.getElementById('activeCount');
         this.completedCount = document.getElementById('completedCount');
+        this.categorySelect = document.getElementById('todoCategory');
+        this.prioritySelect = document.getElementById('todoPriority');
+        this.filterBtns = document.querySelectorAll('.filter-btn');
+        this.currentFilter = 'all';
 
         this.init();
     }
@@ -538,6 +542,15 @@ class TodoList {
             if (e.key === 'Enter') {
                 this.addTodo();
             }
+        });
+
+        this.filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentFilter = btn.dataset.filter;
+                this.render();
+            });
         });
 
         this.render();
@@ -557,6 +570,8 @@ class TodoList {
         const todo = {
             id: Date.now(),
             text: text,
+            category: this.categorySelect.value,
+            priority: this.prioritySelect.value,
             completed: false,
             createdAt: new Date().toISOString()
         };
@@ -603,17 +618,29 @@ class TodoList {
         localStorage.setItem('nierTodos', JSON.stringify(this.todos));
     }
 
+    getFilteredTodos() {
+        if (this.currentFilter === 'all') {
+            return this.todos;
+        }
+        return this.todos.filter(todo => todo.category === this.currentFilter);
+    }
+
     render() {
         this.todoList.innerHTML = '';
 
-        if (this.todos.length === 0) {
+        const filteredTodos = this.getFilteredTodos();
+
+        if (filteredTodos.length === 0) {
+            const message = this.currentFilter === 'all'
+                ? 'No mission objectives assigned. Awaiting input...'
+                : `No mission objectives in ${this.currentFilter.toUpperCase()} category.`;
             this.todoList.innerHTML = `
                 <div class="todo-empty">
-                    No mission objectives assigned. Awaiting input...
+                    ${message}
                 </div>
             `;
         } else {
-            this.todos.forEach(todo => {
+            filteredTodos.forEach(todo => {
                 const li = this.createTodoElement(todo);
                 this.todoList.appendChild(li);
             });
@@ -624,7 +651,7 @@ class TodoList {
 
     createTodoElement(todo) {
         const li = document.createElement('li');
-        li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        li.className = `todo-item ${todo.completed ? 'completed' : ''} priority-${todo.priority}`;
         li.setAttribute('data-todo-id', todo.id);
 
         const checkbox = document.createElement('input');
@@ -633,9 +660,31 @@ class TodoList {
         checkbox.checked = todo.completed;
         checkbox.addEventListener('change', () => this.toggleTodo(todo.id));
 
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'todo-content';
+
         const span = document.createElement('span');
         span.className = 'todo-text';
         span.textContent = todo.text;
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'todo-meta';
+
+        const categorySpan = document.createElement('span');
+        categorySpan.className = 'todo-category';
+        categorySpan.textContent = todo.category.toUpperCase();
+        categorySpan.setAttribute('data-category', todo.category);
+
+        const prioritySpan = document.createElement('span');
+        prioritySpan.className = 'todo-priority';
+        prioritySpan.textContent = todo.priority.toUpperCase();
+        prioritySpan.setAttribute('data-priority', todo.priority);
+
+        metaDiv.appendChild(categorySpan);
+        metaDiv.appendChild(prioritySpan);
+
+        contentDiv.appendChild(span);
+        contentDiv.appendChild(metaDiv);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'todo-delete';
@@ -643,7 +692,7 @@ class TodoList {
         deleteBtn.addEventListener('click', () => this.deleteTodo(todo.id));
 
         li.appendChild(checkbox);
-        li.appendChild(span);
+        li.appendChild(contentDiv);
         li.appendChild(deleteBtn);
 
         return li;

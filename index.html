@@ -108,9 +108,41 @@
                 <h2>// MISSION LOG</h2>
             </div>
             <div class="todo-container">
-                <div class="todo-input-group">
-                    <input type="text" id="todoInput" class="todo-input" placeholder="Enter mission objective...">
-                    <button id="addTodoBtn" class="nier-button">ADD</button>
+                <div class="todo-form">
+                    <div class="todo-input-group">
+                        <input type="text" id="todoInput" class="todo-input" placeholder="Enter mission objective...">
+                    </div>
+                    <div class="todo-options">
+                        <div class="todo-option-group">
+                            <label for="todoCategory">CATEGORY:</label>
+                            <select id="todoCategory" class="todo-select">
+                                <option value="mission">MISSION</option>
+                                <option value="maintenance">MAINTENANCE</option>
+                                <option value="recon">RECONNAISSANCE</option>
+                                <option value="support">SUPPORT</option>
+                            </select>
+                        </div>
+                        <div class="todo-option-group">
+                            <label for="todoPriority">PRIORITY:</label>
+                            <select id="todoPriority" class="todo-select">
+                                <option value="low">LOW</option>
+                                <option value="medium" selected>MEDIUM</option>
+                                <option value="high">HIGH</option>
+                                <option value="critical">CRITICAL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="todo-add-btn">
+                        <button id="addTodoBtn" class="nier-button">ADD OBJECTIVE</button>
+                    </div>
+                </div>
+                <div class="todo-filters">
+                    <span class="filter-label">FILTER:</span>
+                    <button class="filter-btn active" data-filter="all">ALL</button>
+                    <button class="filter-btn" data-filter="mission">MISSION</button>
+                    <button class="filter-btn" data-filter="maintenance">MAINTENANCE</button>
+                    <button class="filter-btn" data-filter="recon">RECON</button>
+                    <button class="filter-btn" data-filter="support">SUPPORT</button>
                 </div>
                 <div class="todo-stats">
                     <span class="todo-stat">ACTIVE: <span id="activeCount">0</span></span>
