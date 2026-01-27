@@ -103,6 +103,35 @@
             </div>
         </section>
 
+        <section class="go-game-section">
+            <div class="panel-header">
+                <h2>// GO PROTOCOL</h2>
+            </div>
+            <div class="game-container">
+                <div class="game-info">
+                    <div class="score-display">
+                        <span>BLACK: </span><span id="blackScore">0</span>
+                    </div>
+                    <div class="score-display">
+                        <span>WHITE: </span><span id="whiteScore">0</span>
+                    </div>
+                    <div class="turn-display">
+                        <span>TURN: </span><span id="currentTurn">BLACK</span>
+                    </div>
+                </div>
+                <canvas id="goGame" width="400" height="400"></canvas>
+                <div class="game-controls">
+                    <button id="goStartBtn" class="nier-button">START</button>
+                    <button id="goPassBtn" class="nier-button secondary">PASS</button>
+                    <button id="goResetBtn" class="nier-button tertiary">RESET</button>
+                </div>
+                <div class="game-instructions">
+                    <p>Click intersections to place stones</p>
+                    <p class="status-ok">Capture opponent's stones by surrounding them • Control territory to win</p>
+                </div>
+            </div>
+        </section>
+
         <section class="todo-section">
             <div class="panel-header">
                 <h2>// MISSION LOG</h2>

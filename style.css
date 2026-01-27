@@ -376,6 +376,35 @@ body {
     margin: 0.5rem 0;
 }
 
+/* Go Game Section */
+.go-game-section {
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 2rem;
+    position: relative;
+}
+
+#goGame {
+    border: 2px solid var(--accent-color);
+    background: var(--primary-bg);
+    box-shadow: 0 0 20px rgba(212, 197, 169, 0.2);
+    display: block;
+    cursor: crosshair;
+}
+
+.turn-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: var(--accent-color);
+    letter-spacing: 0.1em;
+}
+
+.turn-display span:last-child {
+    color: var(--highlight);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
 /* Todo Section */
 .todo-section {
     background: var(--secondary-bg);
@@ -738,6 +767,11 @@ body {
     }
 
     #snakeGame {
+        max-width: 100%;
+        height: auto;
+    }
+
+    #goGame {
         max-width: 100%;
         height: auto;
     }
