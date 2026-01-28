@@ -376,6 +376,73 @@ body {
     margin: 0.5rem 0;
 }
 
+/* Go Section */
+.go-section {
+    background: var(--secondary-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 2rem;
+    position: relative;
+}
+
+.go-section .game-info {
+    gap: 2rem;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+}
+
+.player-label {
+    color: var(--accent-color);
+}
+
+.capture-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.turn-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1.5rem;
+    background: var(--primary-bg);
+    border: 2px solid var(--accent-color);
+}
+
+.turn-label {
+    color: var(--accent-color);
+}
+
+#currentTurn {
+    color: var(--highlight);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+#goBoard {
+    border: 2px solid var(--accent-color);
+    background: var(--primary-bg);
+    box-shadow: 0 0 20px rgba(212, 197, 169, 0.2);
+    display: block;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+}
+
+#goBoard:hover {
+    box-shadow: 0 0 30px rgba(212, 197, 169, 0.3);
+}
+
 /* Todo Section */
 .todo-section {
     background: var(--secondary-bg);

@@ -662,3 +662,523 @@ class TodoList {
 function initTodoList() {
     new TodoList();
 }
+
+// Go Game Implementation
+class GoGame {
+    constructor(boardSize = 9) {
+        this.canvas = document.getElementById('goBoard');
+        this.ctx = this.canvas.getContext('2d');
+        this.boardSize = boardSize;
+        this.cellSize = this.canvas.width / (boardSize + 1);
+        this.padding = this.cellSize;
+
+        this.board = [];
+        this.currentPlayer = 'black';
+        this.blackCaptures = 0;
+        this.whiteCaptures = 0;
+        this.gameRunning = false;
+        this.koPoint = null;
+        this.passCount = 0;
+        this.moveHistory = [];
+
+        this.init();
+    }
+
+    init() {
+        this.setupControls();
+        this.setupMouseControls();
+        this.resetGame();
+    }
+
+    setupControls() {
+        document.getElementById('goStartBtn').addEventListener('click', () => this.startGame());
+        document.getElementById('goPassBtn').addEventListener('click', () => this.pass());
+        document.getElementById('goResignBtn').addEventListener('click', () => this.resign());
+        document.getElementById('goResetBtn').addEventListener('click', () => this.resetGame());
+    }
+
+    setupMouseControls() {
+        this.canvas.addEventListener('click', (e) => {
+            if (!this.gameRunning) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            this.handleMove(x, y);
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (!this.gameRunning) return;
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            this.drawWithHover(x, y);
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            this.draw();
+        });
+    }
+
+    resetGame() {
+        this.board = Array(this.boardSize).fill(null).map(() =>
+            Array(this.boardSize).fill(null)
+        );
+        this.currentPlayer = 'black';
+        this.blackCaptures = 0;
+        this.whiteCaptures = 0;
+        this.gameRunning = false;
+        this.koPoint = null;
+        this.passCount = 0;
+        this.moveHistory = [];
+
+        this.updateUI();
+        this.draw();
+    }
+
+    startGame() {
+        if (this.gameRunning) return;
+
+        this.gameRunning = true;
+        logToTerminal('Go Protocol: INITIATED');
+        this.draw();
+    }
+
+    handleMove(x, y) {
+        const col = Math.round((x - this.padding) / this.cellSize);
+        const row = Math.round((y - this.padding) / this.cellSize);
+
+        if (col < 0 || col >= this.boardSize || row < 0 || row >= this.boardSize) {
+            return;
+        }
+
+        if (this.board[row][col] !== null) {
+            return;
+        }
+
+        this.placeStone(row, col);
+    }
+
+    placeStone(row, col) {
+        const opponent = this.currentPlayer === 'black' ? 'white' : 'black';
+
+        // Check for suicide (not allowed unless capturing)
+        const wouldCapture = this.checkCaptures(row, col, opponent);
+
+        if (!wouldCapture && this.hasNoLiberties(row, col, this.currentPlayer)) {
+            logToTerminal('Invalid move: Suicide is not allowed');
+            return;
+        }
+
+        // Check ko rule
+        if (this.koPoint && this.koPoint.row === row && this.koPoint.col === col) {
+            logToTerminal('Invalid move: Ko rule violation');
+            return;
+        }
+
+        // Place the stone
+        this.board[row][col] = this.currentPlayer;
+        this.moveHistory.push({ row, col, player: this.currentPlayer });
+
+        // Capture opponent stones
+        const captured = this.captureStones(row, col, opponent);
+
+        // Update captures
+        if (this.currentPlayer === 'black') {
+            this.blackCaptures += captured;
+        } else {
+            this.whiteCaptures += captured;
+        }
+
+        // Set ko point if single capture
+        if (captured === 1) {
+            const surrounding = this.getNeighbors(row, col);
+            const surrounded = surrounding.filter(n =>
+                this.board[n.row][n.col] === this.currentPlayer
+            );
+
+            if (surrounded.length === 3) {
+                this.koPoint = { row, col };
+            } else {
+                this.koPoint = null;
+            }
+        } else {
+            this.koPoint = null;
+        }
+
+        // Reset pass count
+        this.passCount = 0;
+
+        // Switch player
+        this.currentPlayer = opponent;
+
+        this.updateUI();
+        this.draw();
+        logToTerminal(`Stone placed at ${String.fromCharCode(65 + col)}${row + 1}`);
+    }
+
+    checkCaptures(row, col, opponent) {
+        const neighbors = this.getNeighbors(row, col);
+        let wouldCapture = false;
+
+        for (const neighbor of neighbors) {
+            if (this.board[neighbor.row][neighbor.col] === opponent) {
+                const liberties = this.countLiberties(neighbor.row, neighbor.col, opponent);
+                if (liberties === 0) {
+                    wouldCapture = true;
+                }
+            }
+        }
+
+        return wouldCapture;
+    }
+
+    captureStones(row, col, opponent) {
+        const neighbors = this.getNeighbors(row, col);
+        let captured = 0;
+
+        for (const neighbor of neighbors) {
+            if (this.board[neighbor.row][neighbor.col] === opponent) {
+                const group = this.getGroup(neighbor.row, neighbor.col, opponent);
+                if (this.countLiberties(neighbor.row, neighbor.col, opponent) === 0) {
+                    for (const stone of group) {
+                        this.board[stone.row][stone.col] = null;
+                        captured++;
+                    }
+                }
+            }
+        }
+
+        return captured;
+    }
+
+    hasNoLiberties(row, col, color) {
+        return this.countLiberties(row, col, color) === 0;
+    }
+
+    countLiberties(row, col, color) {
+        const group = this.getGroup(row, col, color);
+        const liberties = new Set();
+
+        for (const stone of group) {
+            const neighbors = this.getNeighbors(stone.row, stone.col);
+            for (const neighbor of neighbors) {
+                if (this.board[neighbor.row][neighbor.col] === null) {
+                    liberties.add(`${neighbor.row},${neighbor.col}`);
+                }
+            }
+        }
+
+        return liberties.size;
+    }
+
+    getGroup(row, col, color) {
+        const group = [];
+        const visited = new Set();
+        const stack = [{ row, col }];
+
+        while (stack.length > 0) {
+            const current = stack.pop();
+            const key = `${current.row},${current.col}`;
+
+            if (visited.has(key)) continue;
+            if (this.board[current.row][current.col] !== color) continue;
+
+            visited.add(key);
+            group.push(current);
+
+            const neighbors = this.getNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                stack.push(neighbor);
+            }
+        }
+
+        return group;
+    }
+
+    getNeighbors(row, col) {
+        const neighbors = [];
+
+        if (row > 0) neighbors.push({ row: row - 1, col });
+        if (row < this.boardSize - 1) neighbors.push({ row: row + 1, col });
+        if (col > 0) neighbors.push({ row, col: col - 1 });
+        if (col < this.boardSize - 1) neighbors.push({ row, col: col + 1 });
+
+        return neighbors;
+    }
+
+    pass() {
+        if (!this.gameRunning) return;
+
+        this.passCount++;
+        this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
+        this.koPoint = null;
+
+        logToTerminal(`${this.currentPlayer.toUpperCase()} passed`);
+
+        if (this.passCount >= 2) {
+            this.endGame();
+        }
+
+        this.updateUI();
+        this.draw();
+    }
+
+    resign() {
+        if (!this.gameRunning) return;
+
+        const winner = this.currentPlayer === 'black' ? 'White' : 'Black';
+        this.gameRunning = false;
+
+        logToTerminal(`Go Protocol: ${winner.toUpperCase()} WINS (Resignation)`);
+
+        // Draw winner message
+        this.ctx.fillStyle = 'rgba(212, 197, 169, 0.9)';
+        this.ctx.font = 'bold 24px Orbitron';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(
+            `${winner.toUpperCase()} WINS`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 - 20
+        );
+        this.ctx.font = '16px Orbitron';
+        this.ctx.fillText('Resignation', this.canvas.width / 2, this.canvas.height / 2 + 20);
+    }
+
+    endGame() {
+        this.gameRunning = false;
+
+        // Simple territory counting (not a full scoring algorithm)
+        const blackTerritory = this.countTerritory('black');
+        const whiteTerritory = this.countTerritory('white');
+
+        const blackScore = blackTerritory + this.whiteCaptures;
+        const whiteScore = whiteTerritory + this.blackCaptures;
+
+        const winner = blackScore > whiteScore ? 'Black' : whiteScore > blackScore ? 'White' : 'Draw';
+
+        logToTerminal(`Go Protocol: Game ended`);
+        logToTerminal(`Black Score: ${blackScore} (territory: ${blackTerritory}, captures: ${this.whiteCaptures})`);
+        logToTerminal(`White Score: ${whiteScore} (territory: ${whiteTerritory}, captures: ${this.blackCaptures})`);
+
+        // Draw result
+        this.ctx.fillStyle = 'rgba(212, 197, 169, 0.9)';
+        this.ctx.font = 'bold 24px Orbitron';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(
+            `${winner.toUpperCase()} WINS`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 - 30
+        );
+        this.ctx.font = '16px Orbitron';
+        this.ctx.fillText(
+            `Black: ${blackScore} - White: ${whiteScore}`,
+            this.canvas.width / 2,
+            this.canvas.height / 2 + 10
+        );
+    }
+
+    countTerritory(color) {
+        let territory = 0;
+        const visited = new Set();
+
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col] === null && !visited.has(`${row},${col}`)) {
+                    const region = this.getRegion(row, col, visited);
+                    if (this.isTerritory(region, color)) {
+                        territory += region.size;
+                    }
+                }
+            }
+        }
+
+        return territory;
+    }
+
+    getRegion(row, col, visited) {
+        const region = new Set();
+        const stack = [{ row, col }];
+
+        while (stack.length > 0) {
+            const current = stack.pop();
+            const key = `${current.row},${current.col}`;
+
+            if (visited.has(key)) continue;
+            if (this.board[current.row][current.col] !== null) continue;
+
+            visited.add(key);
+            region.add(key);
+
+            const neighbors = this.getNeighbors(current.row, current.col);
+            for (const neighbor of neighbors) {
+                stack.push(neighbor);
+            }
+        }
+
+        return region;
+    }
+
+    isTerritory(region, color) {
+        const opponent = color === 'black' ? 'white' : 'black';
+
+        for (const key of region) {
+            const [row, col] = key.split(',').map(Number);
+            const neighbors = this.getNeighbors(row, col);
+
+            for (const neighbor of neighbors) {
+                const stone = this.board[neighbor.row][neighbor.col];
+                if (stone === opponent) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    updateUI() {
+        document.getElementById('blackCaptures').textContent = this.blackCaptures;
+        document.getElementById('whiteCaptures').textContent = this.whiteCaptures;
+        document.getElementById('currentTurn').textContent = this.currentPlayer.toUpperCase();
+    }
+
+    draw() {
+        this.drawWithHover(-1, -1);
+    }
+
+    drawWithHover(hoverX, hoverY) {
+        const ctx = this.ctx;
+
+        // Clear canvas
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid
+        ctx.strokeStyle = 'rgba(212, 197, 169, 0.3)';
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i < this.boardSize; i++) {
+            // Vertical lines
+            ctx.beginPath();
+            ctx.moveTo(this.padding + i * this.cellSize, this.padding);
+            ctx.lineTo(this.padding + i * this.cellSize, this.padding + (this.boardSize - 1) * this.cellSize);
+            ctx.stroke();
+
+            // Horizontal lines
+            ctx.beginPath();
+            ctx.moveTo(this.padding, this.padding + i * this.cellSize);
+            ctx.lineTo(this.padding + (this.boardSize - 1) * this.cellSize, this.padding + i * this.cellSize);
+            ctx.stroke();
+        }
+
+        // Draw star points (hoshi) for 9x9 board
+        if (this.boardSize === 9) {
+            const starPoints = [
+                { row: 2, col: 2 },
+                { row: 2, col: 6 },
+                { row: 4, col: 4 },
+                { row: 6, col: 2 },
+                { row: 6, col: 6 }
+            ];
+
+            ctx.fillStyle = 'rgba(212, 197, 169, 0.8)';
+            for (const point of starPoints) {
+                ctx.beginPath();
+                ctx.arc(
+                    this.padding + point.col * this.cellSize,
+                    this.padding + point.row * this.cellSize,
+                    3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+        // Draw stones
+        for (let row = 0; row < this.boardSize; row++) {
+            for (let col = 0; col < this.boardSize; col++) {
+                if (this.board[row][col]) {
+                    this.drawStone(row, col, this.board[row][col]);
+                }
+            }
+        }
+
+        // Draw hover preview
+        if (this.gameRunning && hoverX >= 0 && hoverY >= 0) {
+            const col = Math.round((hoverX - this.padding) / this.cellSize);
+            const row = Math.round((hoverY - this.padding) / this.cellSize);
+
+            if (col >= 0 && col < this.boardSize && row >= 0 && row < this.boardSize) {
+                if (this.board[row][col] === null) {
+                    ctx.globalAlpha = 0.4;
+                    this.drawStone(row, col, this.currentPlayer);
+                    ctx.globalAlpha = 1;
+                }
+            }
+        }
+
+        // Draw start message if game not running
+        if (!this.gameRunning) {
+            ctx.fillStyle = 'rgba(212, 197, 169, 0.5)';
+            ctx.font = '18px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('Press START to begin', this.canvas.width / 2, this.canvas.height / 2);
+        }
+    }
+
+    drawStone(row, col, color) {
+        const ctx = this.ctx;
+        const x = this.padding + col * this.cellSize;
+        const y = this.padding + row * this.cellSize;
+        const radius = this.cellSize * 0.4;
+
+        // Stone shadow
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+
+        // Draw stone
+        if (color === 'black') {
+            const gradient = ctx.createRadialGradient(
+                x - radius * 0.3, y - radius * 0.3, 0,
+                x, y, radius
+            );
+            gradient.addColorStop(0, '#4a4a4a');
+            gradient.addColorStop(1, '#1a1a1a');
+            ctx.fillStyle = gradient;
+        } else {
+            const gradient = ctx.createRadialGradient(
+                x - radius * 0.3, y - radius * 0.3, 0,
+                x, y, radius
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, '#cccccc');
+            ctx.fillStyle = gradient;
+        }
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stone border
+        ctx.strokeStyle = 'rgba(212, 197, 169, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+    }
+}
+
+// Initialize Go Game when DOM is ready
+let goGame;
+document.addEventListener('DOMContentLoaded', () => {
+    goGame = new GoGame();
+});
